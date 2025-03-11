@@ -163,7 +163,8 @@ const Task: React.FC = () => {
         return;
       } else {
         const response: AxiosResponse<{ success: boolean; data: Task }> =
-          await axios.put(`/api/tasks/update/${editTask.id}`, {
+          await axios.put(`/api/tasks/edit`, {
+            id: editTask.id,
             title: editTask.title,
             description: editTask.description,
             status: editTask.status,
@@ -271,370 +272,368 @@ const Task: React.FC = () => {
 
   return (
     mounted && (
-      <div className="p-6 bg-gray-50 min-h-screen">
-        <div className="max-w-5xl mx-auto bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-800">Task Manager</h2>
-            <button
-              onClick={() => setIsDrawerOpen(true)}
-              className="flex items-center bg-purple-600 hover:bg-purple-700 transition-colors text-white px-4 py-2 rounded-md shadow-sm"
-            >
-              <AiOutlinePlus className="mr-2" /> Add Task
-            </button>
-          </div>
-
-          {/* Search and Filter Bar */}
-          <div className="mb-6 flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-grow">
-              <input
-                type="text"
-                placeholder="Search tasks..."
-                className="w-full p-2 pl-3 pr-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-300 focus:border-purple-300 focus:outline-none"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm("")}
-                  className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
-                >
-                  <AiOutlineClose />
-                </button>
-              )}
-            </div>
-            <div className="relative min-w-[180px]">
-              <select
-                className="w-full appearance-none p-2 pl-3 pr-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-300 focus:border-purple-300 focus:outline-none"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <option value="All">All Statuses</option>
-                <option value="Not Started">Not Started</option>
-                <option value="On Progress">In Progress</option>
-                <option value="Done">Done</option>
-                <option value="Reject">Rejected</option>
-              </select>
-              <AiOutlineDown className="w-4 h-4 text-zinc-600 absolute top-1/2 right-3 transform -translate-y-1/2 pointer-events-none" />
-            </div>
-          </div>
-
-          {/* Empty State */}
-          {currentTasks.length === 0 && (
-            <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg">
-              <p className="text-gray-500 mb-2">No tasks found</p>
-              <p className="text-sm text-gray-400">
-                {filteredTasks.length === 0
-                  ? "Try adding a new task or adjusting your filters"
-                  : "Try a different page or adjust your filters"}
-              </p>
-            </div>
-          )}
-
-          {/* Task List */}
-          <ul className="space-y-4">
-            {currentTasks.map((task) => (
-              <li
-                key={task?.id}
-                className="bg-white p-5 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow group"
-              >
-                <div className="flex justify-between items-start">
-                  <div className="space-y-2 flex-grow mr-4">
-                    <div className="flex flex-wrap items-start gap-2">
-                      <h3 className="text-lg font-semibold text-gray-800 mr-2">
-                        {task?.title}
-                      </h3>
-                      <span
-                        className={`px-2.5 py-1 inline-flex items-center text-xs leading-5 font-medium rounded-full border ${getStatusColor(
-                          task?.status
-                        )}`}
-                      >
-                        {getStatusIcon(task?.status)}
-                        {statusConfigs[task?.status]?.label || task?.status}
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-600 whitespace-pre-line">
-                      {task?.description}
-                    </p>
-                    <div className="flex items-center text-xs text-gray-500">
-                      <FaCalendarAlt className="mr-1" />
-                      <span>{task?.created_at}</span>
-                    </div>
-                  </div>
-                  <div className="relative task-dropdown">
-                    <button
-                      onClick={() =>
-                        setSelectedTask(
-                          selectedTask === task?.id ? null : task?.id
-                        )
-                      }
-                      className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full"
-                    >
-                      <FaEllipsisV />
-                    </button>
-                    {selectedTask === task?.id && (
-                      <div className="absolute right-0 mt-1 w-40 bg-white border border-gray-400 rounded-md shadow-md z-10">
-                        <button
-                          className="flex items-center w-full text-left px-4 py-2 hover:bg-gray-100 hover:rounded-md text-sm"
-                          onClick={() => startEditTask(task)}
-                        >
-                          <FaEdit className="mr-2 text-blue-500" /> Edit
-                        </button>
-                        <button
-                          className="flex items-center w-full text-left px-4 py-2 hover:bg-gray-100 hover:rounded-md text-sm"
-                          onClick={() => startDeleteTask(task?.id)}
-                        >
-                          <FaTrash className="mr-2 text-red-500" /> Delete
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-
-          {/* Pagination Component */}
-          {filteredTasks.length > 0 && (
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              paginate={paginate}
-              indexOfFirstItem={indexOfFirstItem}
-              indexOfLastItem={indexOfLastItem}
-              data={filteredTasks}
-            />
-          )}
-
-          {/* Add Task Drawer */}
-          {isDrawerOpen && (
-            <div className="fixed inset-0 bg-black/70 flex justify-end z-50">
-              <div
-                className="bg-white w-full sm:w-2/3 md:w-1/2 lg:w-1/3 h-full p-6 space-y-4 overflow-y-auto"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex justify-between items-center">
-                  <h3 className="text-xl font-bold">Create New Task</h3>
-                  <button
-                    onClick={() => setIsDrawerOpen(false)}
-                    className="p-1 rounded-full hover:bg-gray-100"
-                  >
-                    <AiOutlineClose className="w-5 h-5" />
-                  </button>
-                </div>
-
-                <div className="space-y-4 mt-6">
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Title
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Input task title"
-                      className="w-full p-2 border rounded-md focus:ring-2 focus:ring-purple-300 focus:border-purple-300 focus:outline-none"
-                      value={newTask.title}
-                      onChange={(e) =>
-                        setNewTask({ ...newTask, title: e.target.value })
-                      }
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Description
-                    </label>
-                    <textarea
-                      placeholder="Task Description"
-                      className="w-full p-2 border rounded-md min-h-[120px] max-h-[300px] resize-y focus:ring-2 focus:ring-purple-300 focus:border-purple-300 focus:outline-none"
-                      value={newTask.description}
-                      onChange={(e) =>
-                        setNewTask({ ...newTask, description: e.target.value })
-                      }
-                      maxLength={200}
-                    />
-                    <p className="text-xs text-gray-500 text-right">
-                      {newTask.description.length}/200 characters
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Status
-                    </label>
-                    <div className="relative w-full">
-                      <select
-                        className="w-full appearance-none p-2 pr-8 border rounded-md focus:ring-2 focus:ring-purple-300 focus:border-purple-300 focus:outline-none"
-                        value={newTask.status}
-                        onChange={(e) =>
-                          setNewTask({ ...newTask, status: e.target.value })
-                        }
-                      >
-                        <option value="Not Started">Not Started</option>
-                        <option value="On Progress">In Progress</option>
-                        <option value="Done">Done</option>
-                        <option value="Reject">Rejected</option>
-                      </select>
-                      <AiOutlineDown className="w-4 h-4 text-zinc-600 absolute top-1/2 right-3 transform -translate-y-1/2 pointer-events-none" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-end pt-4 border-t mt-6">
-                  <button
-                    onClick={() => {
-                      setNewTask({
-                        title: "",
-                        description: "",
-                        status: "Not Started",
-                      });
-                      setIsDrawerOpen(false);
-                    }}
-                    className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 mr-2"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleAddTask}
-                    className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700"
-                    disabled={
-                      !newTask.title.trim() || !newTask.description.trim()
-                    }
-                  >
-                    Add Task
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Edit Task Modal */}
-          {isEditing && (
-            <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-              <div
-                className="bg-white w-full max-w-md p-6 rounded-lg"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-xl font-bold">Edit Task</h3>
-                  <button
-                    onClick={() => setIsEditing(false)}
-                    className="p-1 rounded-full hover:bg-gray-100"
-                  >
-                    <AiOutlineClose className="w-5 h-5" />
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Title
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full p-2 border rounded-md focus:ring-2 focus:ring-purple-300 focus:outline-none"
-                      value={editTask.title}
-                      onChange={(e) =>
-                        setEditTask({ ...editTask, title: e.target.value })
-                      }
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Description
-                    </label>
-                    <textarea
-                      className="w-full p-2 border rounded-md min-h-[120px] resize-y focus:ring-2 focus:ring-purple-300 focus:outline-none"
-                      value={editTask.description}
-                      onChange={(e) =>
-                        setEditTask({
-                          ...editTask,
-                          description: e.target.value,
-                        })
-                      }
-                      maxLength={200}
-                    />
-                    <p className="text-xs text-gray-500 text-right">
-                      {editTask.description.length}/200 characters
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Status
-                    </label>
-                    <div className="relative w-full">
-                      <select
-                        className="w-full appearance-none p-2 pr-8 border rounded-md focus:ring-2 focus:ring-purple-300 focus:outline-none"
-                        value={editTask.status}
-                        onChange={(e) =>
-                          setEditTask({ ...editTask, status: e.target.value })
-                        }
-                      >
-                        <option value="Not Started">Not Started</option>
-                        <option value="On Progress">In Progress</option>
-                        <option value="Done">Done</option>
-                        <option value="Reject">Rejected</option>
-                      </select>
-                      <AiOutlineDown className="w-4 h-4 text-zinc-600 absolute top-1/2 right-3 transform -translate-y-1/2 pointer-events-none" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-end space-x-2 mt-6 pt-4 border-t">
-                  <button
-                    onClick={() => setIsEditing(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleEditTask}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-                    disabled={
-                      !editTask.title.trim() || !editTask.description.trim()
-                    }
-                  >
-                    Update
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Delete Confirmation Modal */}
-          {isDeleting && (
-            <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-              <div
-                className="bg-white w-full max-w-sm p-6 rounded-lg"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <h3 className="text-lg font-medium mb-4">Confirm Deletion</h3>
-                <p className="text-gray-600 mb-6">
-                  Are you sure you want to delete this task? This action cannot
-                  be undone.
-                </p>
-
-                <div className="flex justify-end space-x-2">
-                  <button
-                    onClick={() => {
-                      setIsDeleting(false);
-                      setTaskToDelete(null);
-                    }}
-                    className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleDeleteTask}
-                    className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+      <div className="p-6 max-w-6xl mx-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-800">Task Manager</h2>
+          <button
+            onClick={() => setIsDrawerOpen(true)}
+            className="flex items-center bg-purple-600 hover:bg-purple-700 transition-colors text-white px-4 py-2 rounded-md shadow-sm"
+          >
+            <AiOutlinePlus className="mr-2" /> Add Task
+          </button>
         </div>
+
+        {/* Search and Filter Bar */}
+        <div className="mb-6 flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-grow">
+            <input
+              type="text"
+              placeholder="Search tasks..."
+              className="w-full p-2 pl-3 pr-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-300 focus:border-purple-300 focus:outline-none"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm("")}
+                className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+              >
+                <AiOutlineClose />
+              </button>
+            )}
+          </div>
+          <div className="relative min-w-[180px]">
+            <select
+              className="w-full appearance-none p-2 pl-3 pr-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-300 focus:border-purple-300 focus:outline-none"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="All">All Statuses</option>
+              <option value="Not Started">Not Started</option>
+              <option value="On Progress">In Progress</option>
+              <option value="Done">Done</option>
+              <option value="Reject">Rejected</option>
+            </select>
+            <AiOutlineDown className="w-4 h-4 text-zinc-600 absolute top-1/2 right-3 transform -translate-y-1/2 pointer-events-none" />
+          </div>
+        </div>
+
+        {/* Empty State */}
+        {currentTasks.length === 0 && (
+          <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg">
+            <p className="text-gray-500 mb-2">No tasks found</p>
+            <p className="text-sm text-gray-400">
+              {filteredTasks.length === 0
+                ? "Try adding a new task or adjusting your filters"
+                : "Try a different page or adjust your filters"}
+            </p>
+          </div>
+        )}
+
+        {/* Task List */}
+        <ul className="space-y-4">
+          {currentTasks.map((task) => (
+            <li
+              key={task?.id}
+              className="bg-white p-5 border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow group"
+            >
+              <div className="flex justify-between items-start">
+                <div className="space-y-2 flex-grow mr-4">
+                  <div className="flex flex-wrap items-start gap-2">
+                    <h3 className="text-lg font-semibold text-gray-800 mr-2">
+                      {task?.title}
+                    </h3>
+                    <span
+                      className={`px-2.5 py-1 inline-flex items-center text-xs leading-5 font-medium rounded-full border ${getStatusColor(
+                        task?.status
+                      )}`}
+                    >
+                      {getStatusIcon(task?.status)}
+                      {statusConfigs[task?.status]?.label || task?.status}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 whitespace-pre-line">
+                    {task?.description}
+                  </p>
+                  <div className="flex items-center text-xs text-gray-500">
+                    <FaCalendarAlt className="mr-1" />
+                    <span>{task?.created_at}</span>
+                  </div>
+                </div>
+                <div className="relative task-dropdown">
+                  <button
+                    onClick={() =>
+                      setSelectedTask(
+                        selectedTask === task?.id ? null : task?.id
+                      )
+                    }
+                    className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full"
+                  >
+                    <FaEllipsisV />
+                  </button>
+                  {selectedTask === task?.id && (
+                    <div className="absolute right-0 mt-1 w-40 bg-white border border-gray-400 rounded-md shadow-md z-10">
+                      <button
+                        className="flex items-center w-full text-left px-4 py-2 hover:bg-gray-100 hover:rounded-md text-sm"
+                        onClick={() => startEditTask(task)}
+                      >
+                        <FaEdit className="mr-2 text-blue-500" /> Edit
+                      </button>
+                      <button
+                        className="flex items-center w-full text-left px-4 py-2 hover:bg-gray-100 hover:rounded-md text-sm"
+                        onClick={() => startDeleteTask(task?.id)}
+                      >
+                        <FaTrash className="mr-2 text-red-500" /> Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+
+        {/* Pagination Component */}
+        {filteredTasks.length > 0 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            paginate={paginate}
+            indexOfFirstItem={indexOfFirstItem}
+            indexOfLastItem={indexOfLastItem}
+            data={filteredTasks}
+          />
+        )}
+
+        {/* Add Task Drawer */}
+        {isDrawerOpen && (
+          <div className="fixed inset-0 bg-black/70 flex justify-end z-50">
+            <div
+              className="bg-white w-full sm:w-2/3 md:w-1/2 lg:w-1/3 h-full p-6 space-y-4 overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-bold">Create New Task</h3>
+                <button
+                  onClick={() => setIsDrawerOpen(false)}
+                  className="p-1 rounded-full hover:bg-gray-100"
+                >
+                  <AiOutlineClose className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4 mt-6">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Title
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Input task title"
+                    className="w-full p-2 border rounded-md focus:ring-2 focus:ring-purple-300 focus:border-purple-300 focus:outline-none"
+                    value={newTask.title}
+                    onChange={(e) =>
+                      setNewTask({ ...newTask, title: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Description
+                  </label>
+                  <textarea
+                    placeholder="Task Description"
+                    className="w-full p-2 border rounded-md min-h-[120px] max-h-[300px] resize-y focus:ring-2 focus:ring-purple-300 focus:border-purple-300 focus:outline-none"
+                    value={newTask.description}
+                    onChange={(e) =>
+                      setNewTask({ ...newTask, description: e.target.value })
+                    }
+                    maxLength={200}
+                  />
+                  <p className="text-xs text-gray-500 text-right">
+                    {newTask.description.length}/200 characters
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Status
+                  </label>
+                  <div className="relative w-full">
+                    <select
+                      className="w-full appearance-none p-2 pr-8 border rounded-md focus:ring-2 focus:ring-purple-300 focus:border-purple-300 focus:outline-none"
+                      value={newTask.status}
+                      onChange={(e) =>
+                        setNewTask({ ...newTask, status: e.target.value })
+                      }
+                    >
+                      <option value="Not Started">Not Started</option>
+                      <option value="On Progress">In Progress</option>
+                      <option value="Done">Done</option>
+                      <option value="Reject">Rejected</option>
+                    </select>
+                    <AiOutlineDown className="w-4 h-4 text-zinc-600 absolute top-1/2 right-3 transform -translate-y-1/2 pointer-events-none" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-4 border-t mt-6">
+                <button
+                  onClick={() => {
+                    setNewTask({
+                      title: "",
+                      description: "",
+                      status: "Not Started",
+                    });
+                    setIsDrawerOpen(false);
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 mr-2"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddTask}
+                  className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700"
+                  disabled={
+                    !newTask.title.trim() || !newTask.description.trim()
+                  }
+                >
+                  Add Task
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Task Modal */}
+        {isEditing && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+            <div
+              className="bg-white w-full max-w-md p-6 rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold">Edit Task</h3>
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="p-1 rounded-full hover:bg-gray-100"
+                >
+                  <AiOutlineClose className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Title
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full p-2 border rounded-md focus:ring-2 focus:ring-purple-300 focus:outline-none"
+                    value={editTask.title}
+                    onChange={(e) =>
+                      setEditTask({ ...editTask, title: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Description
+                  </label>
+                  <textarea
+                    className="w-full p-2 border rounded-md min-h-[120px] resize-y focus:ring-2 focus:ring-purple-300 focus:outline-none"
+                    value={editTask.description}
+                    onChange={(e) =>
+                      setEditTask({
+                        ...editTask,
+                        description: e.target.value,
+                      })
+                    }
+                    maxLength={200}
+                  />
+                  <p className="text-xs text-gray-500 text-right">
+                    {editTask.description.length}/200 characters
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Status
+                  </label>
+                  <div className="relative w-full">
+                    <select
+                      className="w-full appearance-none p-2 pr-8 border rounded-md focus:ring-2 focus:ring-purple-300 focus:outline-none"
+                      value={editTask.status}
+                      onChange={(e) =>
+                        setEditTask({ ...editTask, status: e.target.value })
+                      }
+                    >
+                      <option value="Not Started">Not Started</option>
+                      <option value="On Progress">In Progress</option>
+                      <option value="Done">Done</option>
+                      <option value="Reject">Rejected</option>
+                    </select>
+                    <AiOutlineDown className="w-4 h-4 text-zinc-600 absolute top-1/2 right-3 transform -translate-y-1/2 pointer-events-none" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-2 mt-6 pt-4 border-t">
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleEditTask}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                  disabled={
+                    !editTask.title.trim() || !editTask.description.trim()
+                  }
+                >
+                  Update
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {isDeleting && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+            <div
+              className="bg-white w-full max-w-sm p-6 rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-medium mb-4">Confirm Deletion</h3>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to delete this task? This action cannot be
+                undone.
+              </p>
+
+              <div className="flex justify-end space-x-2">
+                <button
+                  onClick={() => {
+                    setIsDeleting(false);
+                    setTaskToDelete(null);
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteTask}
+                  className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     )
   );
