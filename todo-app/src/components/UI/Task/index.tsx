@@ -16,6 +16,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import relativeTime from "dayjs/plugin/relativeTime";
+import { showNotification } from "@/app/utils/notification";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -134,23 +135,32 @@ const Task: React.FC = () => {
   const handleAddTask = async () => {
     try {
       if (newTask.title.trim() === "" || newTask.description.trim() === "") {
+        showNotification.error("Task title and description cannot be empty");
         return;
-      } else {
-        const response: AxiosResponse<{ success: boolean; data: Task }> =
-          await axios.post("/api/tasks/add", {
-            title: newTask.title,
-            description: newTask.description,
-            status: newTask.status,
-            created_by: 1,
-          });
+      }
 
-        if (response.data.success) {
-          setTasks([...tasks, response.data.data]);
-          setNewTask({ title: "", description: "", status: "Not Started" });
-          setIsDrawerOpen(false);
-        }
+      const loadingToastId = showNotification.loading("Adding task...");
+
+      const response: AxiosResponse<{ success: boolean; data: Task }> =
+        await axios.post("/api/tasks/add", {
+          title: newTask.title,
+          description: newTask.description,
+          status: newTask.status,
+          created_by: 1,
+        });
+
+      showNotification.dismiss(loadingToastId);
+
+      if (response.data.success) {
+        showNotification.success("Task added successfully!");
+        setTasks([...tasks, response.data.data]);
+        setNewTask({ title: "", description: "", status: "Not Started" });
+        setIsDrawerOpen(false);
+      } else {
+        showNotification.error("Failed to add task");
       }
     } catch (error) {
+      showNotification.error("An error occurred while adding the task");
       console.error("Error adding task:", error);
     } finally {
       fetchTasks();
@@ -160,23 +170,32 @@ const Task: React.FC = () => {
   const handleEditTask = async () => {
     try {
       if (editTask.title.trim() === "" || editTask.description.trim() === "") {
+        showNotification.error("Task title and description cannot be empty");
         return;
-      } else {
-        const response: AxiosResponse<{ success: boolean; data: Task }> =
-          await axios.put(`/api/tasks/edit`, {
-            id: editTask.id,
-            title: editTask.title,
-            description: editTask.description,
-            status: editTask.status,
-          });
+      }
 
-        if (response.data.success) {
-          setIsEditing(false);
-          setSelectedTask(null);
-          fetchTasks();
-        }
+      const loadingToastId = showNotification.loading("Updating task...");
+
+      const response: AxiosResponse<{ success: boolean; data: Task }> =
+        await axios.put(`/api/tasks/edit`, {
+          id: editTask.id,
+          title: editTask.title,
+          description: editTask.description,
+          status: editTask.status,
+        });
+
+      showNotification.dismiss(loadingToastId);
+
+      if (response.data.success) {
+        showNotification.success("Task updated successfully!");
+        setIsEditing(false);
+        setSelectedTask(null);
+        fetchTasks();
+      } else {
+        showNotification.error("Failed to update task");
       }
     } catch (error) {
+      showNotification.error("An error occurred while updating the task");
       console.error("Error updating task:", error);
     }
   };
@@ -184,16 +203,24 @@ const Task: React.FC = () => {
   const handleDeleteTask = async () => {
     try {
       if (taskToDelete) {
+        const loadingToastId = showNotification.loading("Deleting task...");
+
         const response: AxiosResponse<{ success: boolean }> =
           await axios.delete(`/api/tasks/delete/${taskToDelete}`);
 
+        showNotification.dismiss(loadingToastId);
+
         if (response.data.success) {
+          showNotification.success("Task deleted successfully!");
           setTasks(tasks.filter((task) => task?.id !== taskToDelete));
           setIsDeleting(false);
           setTaskToDelete(null);
+        } else {
+          showNotification.error("Failed to delete task");
         }
       }
     } catch (error) {
+      showNotification.error("An error occurred while deleting the task");
       console.error("Error deleting task:", error);
     }
   };
