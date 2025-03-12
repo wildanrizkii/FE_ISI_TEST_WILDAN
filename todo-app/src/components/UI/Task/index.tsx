@@ -83,6 +83,9 @@ const Task: React.FC = () => {
   const [itemsPerPage] = useState<number>(5);
   const { data: session } = useSession();
 
+  // Check if user is Team role
+  const isTeamRole = session?.user?.role === "Team";
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -172,20 +175,43 @@ const Task: React.FC = () => {
 
   const handleEditTask = async () => {
     try {
-      if (editTask.title.trim() === "" || editTask.description.trim() === "") {
-        showNotification.error("Task title and description cannot be empty");
+      if (
+        (!isTeamRole &&
+          (editTask.title.trim() === "" ||
+            editTask.description.trim() === "")) ||
+        (isTeamRole && editTask.description.trim() === "")
+      ) {
+        showNotification.error(
+          isTeamRole
+            ? "Task description cannot be empty"
+            : "Task title and description cannot be empty"
+        );
         return;
       }
 
       const loadingToastId = showNotification.loading("Updating task...");
 
+      // If Team role, make sure we're using the original title
+      const taskToUpdate = isTeamRole
+        ? {
+            id: editTask.id,
+            title:
+              tasks.find((task) => task.id === editTask.id)?.title ||
+              editTask.title, // Keep original title
+            description: editTask.description,
+            status: editTask.status,
+            updated_by: session?.user.id,
+          }
+        : {
+            id: editTask.id,
+            title: editTask.title,
+            description: editTask.description,
+            status: editTask.status,
+            updated_by: session?.user.id,
+          };
+
       const response: AxiosResponse<{ success: boolean; data: Task }> =
-        await axios.put(`/api/tasks/edit`, {
-          id: editTask.id,
-          title: editTask.title,
-          description: editTask.description,
-          status: editTask.status,
-        });
+        await axios.put(`/api/tasks/edit`, taskToUpdate);
 
       showNotification.dismiss(loadingToastId);
 
@@ -305,12 +331,15 @@ const Task: React.FC = () => {
       <div className="p-6 max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-800">Task Manager</h2>
-          <button
-            onClick={() => setIsDrawerOpen(true)}
-            className="flex items-center bg-purple-600 hover:bg-purple-700 transition-colors text-white px-4 py-2 rounded-md shadow-sm"
-          >
-            <AiOutlinePlus className="mr-2" /> Add Task
-          </button>
+          {/* Only show Add Task button if not Team role */}
+          {!isTeamRole && (
+            <button
+              onClick={() => setIsDrawerOpen(true)}
+              className="flex items-center bg-purple-600 hover:bg-purple-700 transition-colors text-white px-4 py-2 rounded-md shadow-sm"
+            >
+              <AiOutlinePlus className="mr-2" /> Add Task
+            </button>
+          )}
         </div>
 
         {/* Search and Filter Bar */}
@@ -409,12 +438,15 @@ const Task: React.FC = () => {
                       >
                         <FaEdit className="mr-2 text-blue-500" /> Edit
                       </button>
-                      <button
-                        className="flex items-center w-full text-left px-4 py-2 hover:bg-gray-100 hover:rounded-md text-sm"
-                        onClick={() => startDeleteTask(task?.id)}
-                      >
-                        <FaTrash className="mr-2 text-red-500" /> Delete
-                      </button>
+                      {/* Only show Delete option if not Team role */}
+                      {!isTeamRole && (
+                        <button
+                          className="flex items-center w-full text-left px-4 py-2 hover:bg-gray-100 hover:rounded-md text-sm"
+                          onClick={() => startDeleteTask(task?.id)}
+                        >
+                          <FaTrash className="mr-2 text-red-500" /> Delete
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -560,12 +592,21 @@ const Task: React.FC = () => {
                   </label>
                   <input
                     type="text"
-                    className="w-full p-2 border rounded-md focus:ring-2 focus:ring-purple-300 focus:outline-none"
+                    className={`w-full p-2 border rounded-md focus:ring-2 focus:ring-purple-300 focus:outline-none ${
+                      isTeamRole ? "bg-gray-100 cursor-not-allowed" : ""
+                    }`}
                     value={editTask.title}
                     onChange={(e) =>
                       setEditTask({ ...editTask, title: e.target.value })
                     }
+                    disabled={isTeamRole} // Disable title editing for Team role
+                    readOnly={isTeamRole}
                   />
+                  {isTeamRole && (
+                    <p className="text-xs text-gray-500">
+                      Title cannot be edited by Team members
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -621,7 +662,9 @@ const Task: React.FC = () => {
                   onClick={handleEditTask}
                   className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700"
                   disabled={
-                    !editTask.title.trim() || !editTask.description.trim()
+                    (isTeamRole && !editTask.description.trim()) ||
+                    (!isTeamRole &&
+                      (!editTask.title.trim() || !editTask.description.trim()))
                   }
                 >
                   Update

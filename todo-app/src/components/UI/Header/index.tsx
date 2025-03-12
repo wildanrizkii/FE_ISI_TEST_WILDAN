@@ -72,9 +72,7 @@ const Header: React.FC<HeaderProps> = ({
 
           {/* Title */}
           <div className="flex-1 flex justify-center lg:justify-start">
-            <h1 className="text-xl font-semibold text-gray-800">
-              {getPageTitle()}
-            </h1>
+            <h1 className="text-xl font-semibold text-gray-800">Todo App</h1>
           </div>
 
           {/* User profile dropdown */}

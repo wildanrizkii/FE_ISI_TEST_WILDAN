@@ -41,19 +41,21 @@ export async function POST(req: Request): Promise<NextResponse> {
 
       // Log the task creation
       const logQuery = `
-        INSERT INTO task_log (id_task, updated_by, previous_status, new_status, previous_desc, new_desc, updated_at, created_at, status)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        INSERT INTO task_log (id_task, updated_by, new_status, new_desc, updated_at, status, new_title, previous_title, previous_desc, previous_status, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       `;
       const logValues = [
         taskId,
-        created_by,
         null, // previous_status is null for new tasks
-        status,
-        null, // previous_desc is null for new tasks
-        description,
         null,
-        created_at,
+        null, // previous_desc is null for new tasks
+        null,
         "Task Created",
+        null,
+        title,
+        description,
+        status,
+        created_at,
       ];
       await handlerQuery(logQuery, logValues);
 

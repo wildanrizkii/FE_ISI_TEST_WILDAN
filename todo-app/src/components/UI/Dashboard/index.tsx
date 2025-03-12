@@ -20,7 +20,9 @@ interface TaskLog {
   id: string;
   id_task: string;
   updated_by: string;
+  previous_title: string;
   previous_status: string;
+  new_title: string;
   new_status: string;
   previous_desc: string;
   new_desc: string;
@@ -37,6 +39,57 @@ interface PaginationProps {
   indexOfLastItem: number;
   data: TaskLog[];
 }
+
+// Pagination Component
+const Pagination: React.FC<PaginationProps> = ({
+  currentPage,
+  totalPages,
+  paginate,
+  indexOfFirstItem,
+  indexOfLastItem,
+  data,
+}) => {
+  return (
+    <div className="flex flex-col md:flex-row justify-between items-center py-4 px-2 bg-white border-t border-gray-200">
+      <div className="text-sm text-gray-500 mb-2 md:mb-0">
+        Showing <span className="font-medium">{indexOfFirstItem + 1}</span> to{" "}
+        <span className="font-medium">
+          {Math.min(indexOfLastItem, data.length)}
+        </span>{" "}
+        of <span className="font-medium">{data.length}</span> results
+      </div>
+      <div className="flex space-x-1">
+        <button
+          onClick={() => paginate(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="px-3 py-1 rounded-md bg-white border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Previous
+        </button>
+        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+          <button
+            key={page}
+            onClick={() => paginate(page)}
+            className={`px-3 py-1 rounded-md text-sm font-medium ${
+              currentPage === page
+                ? "bg-purple-600 text-white"
+                : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            {page}
+          </button>
+        ))}
+        <button
+          onClick={() => paginate(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="px-3 py-1 rounded-md bg-white border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const Dashboard = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -62,6 +115,11 @@ const Dashboard = () => {
     fetchTaskLogs();
   }, []);
 
+  // Reset to first page when filtering logs
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [logFilter]);
+
   const fetchTasks = async () => {
     setIsLoading(true);
     try {
@@ -74,7 +132,7 @@ const Dashboard = () => {
         ...task,
         created_at: dayjs(task.created_at)
           .tz("Asia/Jakarta")
-          .format("dddd, DD MMMM YYYY"),
+          .format("dddd, DD MMMM YYYY [at] HH:mm"),
       }));
 
       setTasks(data);
@@ -108,10 +166,10 @@ const Dashboard = () => {
         ...log,
         updated_at: dayjs(log?.updated_at)
           .tz("Asia/Jakarta")
-          .format("dddd, DD MMMM YYYY"),
+          .format("ddd, DD MMMM YYYY [at] HH:mm"),
         created_at: dayjs(log?.created_at)
           .tz("Asia/Jakarta")
-          .format("dddd, DD MMMM YYYY"),
+          .format("ddd, DD MMMM YYYY [at] HH:mm"),
       }));
 
       setTaskLogs(data);
@@ -134,21 +192,14 @@ const Dashboard = () => {
       ? taskLogs
       : taskLogs.filter((log) => log.status === logFilter);
 
-  const indexOfLastItem: number = currentPage * itemsPerPage;
-  const indexOfFirstItem: number = indexOfLastItem - itemsPerPage;
-  const currentTasks: TaskLog[] = filteredLogs.slice(
-    indexOfFirstItem,
-    indexOfLastItem
-  );
-  const totalPages: number = Math.ceil(filteredLogs.length / itemsPerPage);
+  // Pagination calculation
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentLogs = filteredLogs.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
 
-  const paginate = (pageNumber: number): void => {
-    setCurrentPage(pageNumber);
-  };
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, []);
+  // Function to change page
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -524,144 +575,77 @@ const Dashboard = () => {
               No activity logs found
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full border border-gray-200 shadow-sm">
-                <thead className="bg-gray-100 text-gray-600 text-sm">
-                  <tr>
-                    <th className="px-4 py-2 text-start">Task ID</th>
-                    <th className="px-4 py-2 text-start">Status</th>
-                    <th className="px-4 py-2 text-start">Description</th>
-                    <th className="px-4 py-2 text-start">Action</th>
-                    <th className="px-4 py-2 text-start">Time</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200 text-start">
-                  {filteredLogs.map((log) => (
-                    <tr key={log.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-sm text-gray-700">
-                        {log.id_task}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">
-                        {log.new_status}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-700 max-w-24 truncate">
-                        {log.new_desc}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`px-3 py-1.5 text-xs font-semibold rounded-full text-nowrap
-              ${
-                log.status === "Task Created"
-                  ? "bg-cyan-100 text-cyan-700"
-                  : log.status === "Task Updated"
-                  ? "bg-yellow-100 text-yellow-700"
-                  : "bg-red-100 text-red-700"
-              }`}
-                        >
-                          {log.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-500">
-                        {log?.created_at}
-                      </td>
+            <>
+              <div className="overflow-x-auto">
+                <table className="min-w-full border border-gray-200 shadow-sm">
+                  <thead className="bg-gray-100 text-gray-600 text-sm">
+                    <tr>
+                      <th className="px-4 py-2 text-start">Title</th>
+                      <th className="px-4 py-2 text-start">Description</th>
+                      <th className="px-4 py-2 text-start">Status</th>
+                      <th className="px-4 py-2 text-start">Time</th>
+                      <th className="px-4 py-2 text-start">Action</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                paginate={paginate}
-                indexOfFirstItem={indexOfFirstItem}
-                indexOfLastItem={indexOfLastItem}
-                data={taskLogs}
-              />
-            </div>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200 text-start">
+                    {currentLogs.map((log) => (
+                      <tr key={log.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {log.status === "Task Created"
+                            ? log.previous_title
+                            : log.new_title}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700 max-w-24 truncate">
+                          {log.status === "Task Created"
+                            ? log.previous_desc
+                            : log.new_desc}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {log.status === "Task Created"
+                            ? log.previous_status
+                            : log.new_status}
+                        </td>
+
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {log.status === "Task Created"
+                            ? log?.created_at
+                            : log?.updated_at}
+                        </td>
+
+                        <td className="px-4 py-3">
+                          <span
+                            className={`px-3 py-1.5 text-xs font-semibold rounded-full text-nowrap
+                ${
+                  log.status === "Task Created"
+                    ? "bg-cyan-100 text-cyan-700"
+                    : log.status === "Task Updated"
+                    ? "bg-yellow-100 text-yellow-700"
+                    : "bg-red-100 text-red-700"
+                }`}
+                          >
+                            {log.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination Component */}
+              {filteredLogs.length > 0 && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  paginate={paginate}
+                  indexOfFirstItem={indexOfFirstItem}
+                  indexOfLastItem={indexOfLastItem}
+                  data={filteredLogs}
+                />
+              )}
+            </>
           )}
         </div>
-      </div>
-    </div>
-  );
-};
-
-const Pagination: React.FC<PaginationProps> = ({
-  currentPage,
-  totalPages,
-  paginate,
-  indexOfFirstItem,
-  indexOfLastItem,
-  data,
-}) => {
-  const generatePageNumbers = (): (number | string)[] => {
-    const pageNumbers: (number | string)[] = [];
-
-    if (totalPages <= 5) {
-      pageNumbers.push(...Array.from({ length: totalPages }, (_, i) => i + 1));
-    } else {
-      pageNumbers.push(1);
-
-      if (currentPage > 3) pageNumbers.push("...");
-
-      const startPage = Math.max(2, currentPage - 1);
-      const endPage = Math.min(totalPages - 1, currentPage + 1);
-      pageNumbers.push(
-        ...Array.from(
-          { length: endPage - startPage + 1 },
-          (_, i) => startPage + i
-        )
-      );
-
-      if (currentPage < totalPages - 2) pageNumbers.push("...");
-
-      if (totalPages > 1) pageNumbers.push(totalPages);
-    }
-
-    return pageNumbers;
-  };
-
-  return (
-    <div className="flex flex-col sm:flex-row items-center justify-between px-0 py-4 border-t border-gray-200 mt-6">
-      <div className="text-sm text-gray-500 mb-3 sm:mb-0">
-        Showing <span className="font-medium">{indexOfFirstItem + 1}</span> -{" "}
-        <span className="font-medium">
-          {Math.min(indexOfLastItem, data.length)}
-        </span>{" "}
-        of <span className="font-medium">{data.length}</span> results
-      </div>
-
-      <div className="flex items-center space-x-1">
-        <button
-          onClick={() => paginate(currentPage - 1)}
-          disabled={currentPage === 1}
-          className="text-center inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium rounded-md text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Prev
-        </button>
-
-        <div className="hidden md:flex space-x-1">
-          {generatePageNumbers().map((number, index) => (
-            <button
-              key={index}
-              onClick={() => typeof number === "number" && paginate(number)}
-              disabled={number === "..."}
-              className={`text-center inline-flex items-center justify-center w-8 h-8 text-sm font-medium rounded-md ${
-                currentPage === number
-                  ? "z-10 bg-purple-600 text-white border-purple-600"
-                  : "text-gray-700 bg-white border border-gray-300 hover:bg-gray-50"
-              } ${number === "..." ? "cursor-default" : ""}`}
-            >
-              {number}
-            </button>
-          ))}
-        </div>
-
-        <button
-          onClick={() => paginate(currentPage + 1)}
-          disabled={currentPage === totalPages}
-          className="text-center inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium rounded-md text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Next
-        </button>
       </div>
     </div>
   );
