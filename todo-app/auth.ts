@@ -42,7 +42,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
           // If no user found, return null
           if (!user) {
-            console.log("User not found");
+            // console.log("User not found");
             return null;
           }
 
@@ -57,7 +57,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           const passwordMatch = await bcrypt.compare(password, user.password);
 
           if (!passwordMatch) {
-            console.log("Password doesn't match");
+            // console.log("Password doesn't match");
             return null;
           }
 

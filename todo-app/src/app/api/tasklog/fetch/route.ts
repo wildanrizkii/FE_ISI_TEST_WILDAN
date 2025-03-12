@@ -10,7 +10,6 @@ export async function GET(): Promise<NextResponse> {
     const values: (number | null)[] = [];
 
     const data = await handlerQuery(query, values);
-    console.log(data);
     return NextResponse.json({ success: true, data });
   } catch (error) {
     return NextResponse.json(

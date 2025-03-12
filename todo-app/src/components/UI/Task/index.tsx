@@ -110,7 +110,7 @@ const Task: React.FC = () => {
     "On Progress": {
       color: "text-cyan-700 bg-cyan-100 border-cyan-200",
       icon: <FaHourglassHalf className="mr-1" />,
-      label: "In Progress",
+      label: "On Progress",
     },
   };
 
@@ -369,7 +369,7 @@ const Task: React.FC = () => {
             >
               <option value="All">All Statuses</option>
               <option value="Not Started">Not Started</option>
-              <option value="On Progress">In Progress</option>
+              <option value="On Progress">On Progress</option>
               <option value="Done">Done</option>
               <option value="Reject">Rejected</option>
             </select>
@@ -531,7 +531,7 @@ const Task: React.FC = () => {
                       }
                     >
                       <option value="Not Started">Not Started</option>
-                      <option value="On Progress">In Progress</option>
+                      <option value="On Progress">On Progress</option>
                       <option value="Done">Done</option>
                       <option value="Reject">Rejected</option>
                     </select>
@@ -642,7 +642,7 @@ const Task: React.FC = () => {
                       }
                     >
                       <option value="Not Started">Not Started</option>
-                      <option value="On Progress">In Progress</option>
+                      <option value="On Progress">On Progress</option>
                       <option value="Done">Done</option>
                       <option value="Reject">Rejected</option>
                     </select>
