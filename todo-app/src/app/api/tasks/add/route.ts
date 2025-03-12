@@ -25,15 +25,60 @@ export async function POST(req: Request): Promise<NextResponse> {
 
     const created_at: string = getWIBTime();
 
-    const query = `
+    // Begin transaction
+    await handlerQuery("BEGIN", []);
+
+    try {
+      // Insert task
+      const insertTaskQuery = `
         INSERT INTO tasks (title, description, status, created_by, created_at)
         VALUES ($1, $2, $3, $4, $5)
+        RETURNING id
       `;
+      const taskValues = [title, description, status, created_by, created_at];
+      const taskResult = await handlerQuery(insertTaskQuery, taskValues);
+      const taskId = taskResult.rows[0].id;
 
-    const values = [title, description, status, created_by, created_at];
-    await handlerQuery(query, values);
+      // Log the task creation
+      const logQuery = `
+        INSERT INTO task_log (id_task, updated_by, previous_status, new_status, previous_desc, new_desc, updated_at, created_at, status)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      `;
+      const logValues = [
+        taskId,
+        created_by,
+        null, // previous_status is null for new tasks
+        status,
+        null, // previous_desc is null for new tasks
+        description,
+        null,
+        created_at,
+        "Task Created",
+      ];
+      await handlerQuery(logQuery, logValues);
 
-    return NextResponse.json({ success: true }, { status: 200 });
+      // Commit transaction
+      await handlerQuery("COMMIT", []);
+
+      return NextResponse.json(
+        {
+          success: true,
+          data: {
+            id: taskId,
+            title,
+            description,
+            status,
+            created_by,
+            created_at,
+          },
+        },
+        { status: 200 }
+      );
+    } catch (error) {
+      // Rollback transaction in case of error
+      await handlerQuery("ROLLBACK", []);
+      throw error;
+    }
   } catch (error) {
     console.error("Error inserting task:", error);
     return NextResponse.json(

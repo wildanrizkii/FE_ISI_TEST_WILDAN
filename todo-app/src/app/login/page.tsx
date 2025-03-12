@@ -1,9 +1,8 @@
-import React from 'react'
+import React from "react";
+import Login from "@/components/UI/Login";
 
-const page = () => {
-    return (
-        <div>Login Page</div>
-    )
-}
+const Page: React.FC = () => {
+  return <Login />;
+};
 
-export default page
+export default Page;

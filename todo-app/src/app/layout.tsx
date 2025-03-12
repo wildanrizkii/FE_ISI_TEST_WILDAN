@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
+import { SessionProvider } from "next-auth/react";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta-sans",
@@ -28,36 +29,38 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${plusJakartaSans.variable} antialiased`}>
-        {children}
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 5000, // 5 detik
-            style: {
-              background: "#363636",
-              color: "#fff",
-            },
-
-            success: {
-              duration: 5000,
-              iconTheme: {
-                primary: "#10B981",
-                secondary: "#FFFFFF",
+    <SessionProvider>
+      <html lang="en" suppressHydrationWarning={true}>
+        <body className={`${plusJakartaSans.variable} antialiased`}>
+          {children}
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 5000, // 5 detik
+              style: {
+                background: "#363636",
+                color: "#fff",
               },
-            },
 
-            error: {
-              duration: 5000,
-              iconTheme: {
-                primary: "#EF4444",
-                secondary: "#FFFFFF",
+              success: {
+                duration: 5000,
+                iconTheme: {
+                  primary: "#10B981",
+                  secondary: "#FFFFFF",
+                },
               },
-            },
-          }}
-        />
-      </body>
-    </html>
+
+              error: {
+                duration: 5000,
+                iconTheme: {
+                  primary: "#EF4444",
+                  secondary: "#FFFFFF",
+                },
+              },
+            }}
+          />
+        </body>
+      </html>
+    </SessionProvider>
   );
 }

@@ -17,6 +17,8 @@ import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { showNotification } from "@/app/utils/notification";
+import { useSession } from "next-auth/react";
+import bcrypt from "bcryptjs";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -79,6 +81,7 @@ const Task: React.FC = () => {
 
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage] = useState<number>(5);
+  const { data: session } = useSession();
 
   useEffect(() => {
     setMounted(true);
@@ -146,7 +149,7 @@ const Task: React.FC = () => {
           title: newTask.title,
           description: newTask.description,
           status: newTask.status,
-          created_by: 1,
+          created_by: session?.user.id,
         });
 
       showNotification.dismiss(loadingToastId);
@@ -616,7 +619,7 @@ const Task: React.FC = () => {
                 </button>
                 <button
                   onClick={handleEditTask}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                  className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700"
                   disabled={
                     !editTask.title.trim() || !editTask.description.trim()
                   }
