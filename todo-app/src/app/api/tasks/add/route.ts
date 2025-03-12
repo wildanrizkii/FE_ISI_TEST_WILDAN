@@ -25,7 +25,11 @@ export async function POST(req: Request): Promise<NextResponse> {
 
     const created_at: string = getWIBTime();
 
-    // Begin transaction
+    const usersQuery = `SELECT role FROM users WHERE id = $1`;
+    const usersValue = [created_by];
+    const usersResult = await handlerQuery(usersQuery, usersValue);
+    const usersRole = usersResult.rows[0].role;
+
     await handlerQuery("BEGIN", []);
 
     try {
@@ -46,9 +50,9 @@ export async function POST(req: Request): Promise<NextResponse> {
       `;
       const logValues = [
         taskId,
-        null, // previous_status is null for new tasks
+        usersRole,
         null,
-        null, // previous_desc is null for new tasks
+        null,
         null,
         "Task Created",
         null,

@@ -36,8 +36,8 @@ export async function DELETE(
     const { title, description, status } = taskData.rows[0];
 
     const logQuery = `
-        INSERT INTO task_log (id_task, new_status, new_desc, updated_at, status, new_title)
-        VALUES ($1, $2, $3, $4, $5, $6)
+        INSERT INTO task_log (id_task, new_status, new_desc, updated_at, status, new_title, updated_by)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
       `;
     const logValues = [
       id,
@@ -46,6 +46,7 @@ export async function DELETE(
       updated_at,
       "Task Deleted",
       title,
+      "Lead",
     ];
     await handlerQuery(logQuery, logValues);
 

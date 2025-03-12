@@ -24,6 +24,11 @@ export async function PUT(req: Request): Promise<NextResponse> {
 
     const updated_at: string = getWIBTime();
 
+    const usersQuery = `SELECT role FROM users WHERE id = $1`;
+    const usersValue = [updated_by];
+    const usersResult = await handlerQuery(usersQuery, usersValue);
+    const usersRole = usersResult.rows[0].role;
+
     // Begin transaction
     await handlerQuery("BEGIN", []);
 
@@ -67,7 +72,7 @@ export async function PUT(req: Request): Promise<NextResponse> {
       `;
       const logValues = [
         id,
-        updated_by,
+        usersRole,
         status, // new_status
         description, // new_desc
         updated_at,

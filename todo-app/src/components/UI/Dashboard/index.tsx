@@ -582,6 +582,7 @@ const Dashboard = () => {
                     <tr>
                       <th className="px-4 py-2 text-start">Title</th>
                       <th className="px-4 py-2 text-start">Description</th>
+                      <th className="px-4 py-2 text-start">Updated by</th>
                       <th className="px-4 py-2 text-start">Status</th>
                       <th className="px-4 py-2 text-start">Time</th>
                       <th className="px-4 py-2 text-start">Action</th>
@@ -599,6 +600,9 @@ const Dashboard = () => {
                           {log.status === "Task Created"
                             ? log.previous_desc
                             : log.new_desc}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {log?.updated_by}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-700">
                           {log.status === "Task Created"
